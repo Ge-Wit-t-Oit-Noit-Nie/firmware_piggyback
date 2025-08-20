@@ -110,6 +110,13 @@ void can_write(MESSAGE_CODE code, uint8_t *data, uint16_t length) {
         HAL_UART_Transmit(&huart1, data, length, HAL_MAX_DELAY);
     }
 
+    if (length < (UART_RX_BUF_SIZE - 4)) {
+        // Fill the rest of the buffer with 0x00
+        uint8_t padding[UART_RX_BUF_SIZE - length - 4];
+        memset(padding, 0x00, sizeof(padding));
+        HAL_UART_Transmit(&huart1, padding, sizeof(padding), HAL_MAX_DELAY);
+    } 
+
     HAL_UART_Transmit(&huart1, termination_sequence, 3, HAL_MAX_DELAY);
 
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7,

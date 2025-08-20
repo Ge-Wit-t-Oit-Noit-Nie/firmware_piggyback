@@ -23,7 +23,8 @@ extern "C"
 #endif // End of extern "C" block
 
 typedef enum {
-    MESSAGE_CODE_TIME = 0x01
+    MESSAGE_CODE_TIME = 0x01,
+    MESSAGE_LOG_EVENT = 0x02,
 } MESSAGE_CODE;
 
 void can_write(MESSAGE_CODE message, uint8_t *data, uint16_t length);
