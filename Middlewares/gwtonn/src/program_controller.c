@@ -207,6 +207,18 @@ vm_send_telemetry(
       0,
   };
 
+  uint16_t temperature = is_get_temperature() * 100;
+  uint16_t vref = is_get_vref() * 100;
+  uint8_t message[] =
+      {
+          (temperature >> 8) & 0xFF,
+          (temperature & 0xFF),
+          (vref >> 8) & 0xFF,
+          (vref & 0xFF),
+      };
+
+  can_write(MESSAGE_LOG_TELEMETRY, message, sizeof(message));
+
   if (osOK != osMessageQueuePut(loggerQueueHandle, &telemetry, 0, 0U))
   {
     printf("Error: Could not send message to loggerQueueHandle\n\r");
@@ -285,6 +297,9 @@ void program_controller_task(void *argument)
   pcr.end_program_pointer = ((uint32_t *)&_program_data_start)[2];
   pcr.instruction_pointer = pcr.start_program_pointer;
 
+  uint8_t board_started[7] = {0x53, 0x54, 0x41, 0x52, 0x54, 0x45, 0x44}; // "STARTED"
+  can_write(MESSAGE_BOARD_STARTED, board_started, 7);
+
   /* Infinite loop */
   for (;;)
   {
@@ -304,9 +319,25 @@ void program_controller_task(void *argument)
     // If the opcode is 0xFF, this should be interpreted as a 0x00
     // By default, the flash memory is filled with 0xFF, so this is a way to
     // detect the end of the program or an empty instruction.
+    // Hitting this will imply that we have an bug in the program
     if (0xFF == opcode)
     {
-      opcode = 0x00;
+        uint8_t message[5] = {ERR_INVALID_OPCODE,
+                              (pcr.instruction_pointer >> 24) & 0xFF,
+                              (pcr.instruction_pointer >> 16) & 0xFF,
+                              (pcr.instruction_pointer >> 8) & 0xFF,
+                              pcr.instruction_pointer & 0xFF};
+        can_write(MESSAGE_LOG_EVENT, message, 5);
+        telemetry_t telemetry = {
+            pcr.instruction_pointer,
+            pcr.end_program_pointer,
+            ERR_INVALID_OPCODE, // Error code for invalid opcode
+        };
+        if (osOK != osMessageQueuePut(loggerQueueHandle, &telemetry, 0, 0U)) {
+            printf("Error: Could not send message to loggerQueueHandle\n\r");
+        }
+
+        opcode = 0x00;
     }
     program_controller_function[opcode](&pcr);
   }
@@ -353,30 +384,4 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     printf("Error: Could not send message to loggerQueueHandle\n\r");
   }
   // osEventFlagsSet(ext_interrupt_eventHandle, flag);
-}
-
-static FATFS fs; // file system
-void check_new_program()
-{
-  FIL fil;
-
-  FRESULT mount_status = f_mount(&fs, "0:", 1); // mount the file system
-  if (FR_OK == mount_status)
-  {
-    if (FR_OK == f_open(&fil, "program.bin", FA_READ))
-    {
-      printf("---- Programma gevonden: ");
-    }
-    else
-    {
-      printf("<<<<Programma niet gevonden>>>>");
-    }
-    f_close(&fil);
-    f_mount(NULL, "", 0); // unmount the file system
-  }
-  else
-  {
-    printf("Card not mounted (errno: %d)\n\r", mount_status);
-  }
-  return;
 }

@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #include "sd_card.h"
+#include "can.h"
 #include "program_controller.h"
 #include "program_controller.h"
 
@@ -120,7 +121,8 @@ int main(void)
   // If it exists, load it into the flash memory.
   if (FR_OK == sd_card_is_present() && FR_OK == file_exists(PROGRAMMA_FILE_NAME))
   {
-    load_progam_from_sd_to_flash(PROGRAMMA_FILE_NAME, (uint32_t)&_program_data_start);
+      load_progam_from_sd_to_flash(PROGRAMMA_FILE_NAME,
+                                             (uint32_t)&_program_data_start);
   }
 
   /* USER CODE END 2 */
@@ -222,15 +224,40 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 /**
   * @brief  This function is executed in case of error occurrence.
+  * 
+  * This function is called when an error occurs in the HAL library.
+  * It disables interrupts and sets an error pin to indicate an error state.
+  * It can be used for debugging purposes or to indicate an error state.
+  * 
+  * This function will initialize the GPIO pin for the error state and set it to high.
+  * This is required since the GPIO pin is not initialized in the HAL library (yet).
+  * @note   This function is called from the HAL library.
+  * @param  None  
   * @retval None
   */
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14,
-                    GPIO_PIN_SET); // Set an error pin (for example, PB0)
+
+  // Set an error pin to indicate an error state
+  // This can be used for debugging purposes or to indicate an error state
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  GPIO_InitStruct.Pin = GPIO_PIN_14;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_14, GPIO_PIN_SET);
+
+  // Not sure if we can, but try to log to CAN and SPI
+  if(huart1.gState == HAL_UART_STATE_READY) {
+    uint8_t error_number[1] = {ERR_HARD_FAILURE};
+
+    can_write(MESSAGE_LOG_EVENT, error_number, 1);
+  }
+
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
+
   while (1)
   {
   }

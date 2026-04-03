@@ -39,6 +39,9 @@ extern "C"
 #define VM_EXIT 0x0002
 #define VM_ERROR 0x0001
 
+#define ERR_HARD_FAILURE 0x01
+#define ERR_INVALID_OPCODE 0x02
+
   extern uint32_t _program_data_start;
   extern uint32_t _program_data_end;
 

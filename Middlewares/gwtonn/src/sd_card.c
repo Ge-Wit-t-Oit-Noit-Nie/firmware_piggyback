@@ -134,12 +134,13 @@ load_progam_from_sd_to_flash(const char *filename, uint32_t address_memory)
 
       HAL_FLASH_Lock(); // lock the flash
       __enable_irq();
+      f_close(&file);
+      f_unlink(filename); // delete the file after reading it
     }
     else
     {
       printf("Cannot open file (errno: %d)\n\r", status);
     }
-    f_close(&file);
     f_mount(NULL, "", 0); // unmount the file system
   }
   else
