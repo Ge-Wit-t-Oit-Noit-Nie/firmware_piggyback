@@ -19,7 +19,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Set the project name
-set(CMAKE_PROJECT_NAME 2025-Software)
+set(CMAKE_PROJECT_NAME firmware)
 
 set (MX_Defines_Syms
 	#STM32F412Zx

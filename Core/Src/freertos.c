@@ -66,7 +66,7 @@ const osThreadAttr_t programTask_attributes = {
 osThreadId_t logTaskHandle;
 const osThreadAttr_t logTask_attributes = {
     .name = "logTask",
-    .stack_size = 2700 * 4,
+    .stack_size = 400 * 4,
     .priority = (osPriority_t)osPriorityNormal,
 };
 /* Definitions for loggerQueue */

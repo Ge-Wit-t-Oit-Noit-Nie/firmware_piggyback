@@ -52,8 +52,8 @@ float is_get_vref(void)
  */
 void is_get_date_time(RTC_DateTypeDef *date, RTC_TimeTypeDef *time)
 {
-    HAL_RTC_GetDate(&hrtc, date, RTC_FORMAT_BIN);
     HAL_RTC_GetTime(&hrtc, time, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, date, RTC_FORMAT_BIN);
 }
 /*
  * Set the RTC time to the given values.
@@ -94,9 +94,11 @@ void is_set_date(uint8_t year, uint8_t month, uint8_t day)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
     UNUSED(hadc);
-    float vsense;
-
-    vref = (float)((V_REF_INT * 4095.0) / adc_buffer[0]);
-    vsense = (float)(adc_buffer[1] * vref) / 4095.0;
-    temperature = (((V_AT_25C - vsense) * 1000.0) / AVG_SLOPE) + 25.0;
+    if (adc_buffer[0] == 0)
+    {
+        return;
+    }
+    vref = (V_REF_INT * 4095.0F) / adc_buffer[0];
+    float vsense = (adc_buffer[1] * vref) / 4095.0F;
+    temperature = ((V_AT_25C - vsense) * 1000.0F / AVG_SLOPE) + 25.0F;
 }

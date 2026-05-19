@@ -15,14 +15,15 @@
  ******************************************************************************
  */
 
+#include <stdio.h>
+#include <string.h>
+
 #include "logger.h"
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 #include "internal_sensors.h"
 #include "sd_card.h"
 
-#include <stdio.h>
-#include <string.h>
 
 #define BUFFER_SIZE 64
 #define CLEAR_BUFFER(buffer) memset(buffer, '\0', sizeof(buffer))
